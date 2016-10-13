@@ -13,7 +13,7 @@
 #define kFTNotificationMaxHeight                        (200.f)
 #define kFTNotificationTitleHeight                      (24.f)
 #define kFTNotificationMargin_X                         (10.f)
-#define kFTNotificationMargin_Y                         (10.f)
+#define kFTNotificationMargin_Y                         (20.f)
 #define kFTNotificationImageSize                        (30.f)
 #define kFTNotificationStatusBarHeight                  ([[UIApplication sharedApplication] statusBarFrame].size.height)
 #define kFTNotificationDefaultAnimationDuration         (0.2f)
@@ -21,6 +21,9 @@
 #define kFTNotificationDefaultMessageFont               [UIFont systemFontOfSize:13]
 #define kFTNotificationDefaultTextColor                 [UIColor blackColor]
 #define kFTNotificationDefaultTextColor_ForDarkStyle    [UIColor whiteColor]
+
+#define kFTNotificationHandleWidth                      (35.f)
+#define kFTNotificationHandleHeight                     (3.0f)
 
 #define kFTScreenWidth    [UIScreen mainScreen].bounds.size.width
 #define kFTScreenHeight   [UIScreen mainScreen].bounds.size.height
@@ -38,6 +41,7 @@
 @property (nonatomic, assign)BOOL isCurrentlyOnScreen;
 @property (nonatomic, copy, nullable) FTNotificationTapHandler tapHandler;
 @property (nonatomic, copy, nullable) FTNotificationCompletion completion;
+@property (nonatomic, assign)BOOL autoDismiss;
 
 @end
 
@@ -51,7 +55,9 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         shared = [[FTNotificationIndicator alloc] init];
+        shared.autoDismiss = YES;
     });
+    
     return shared;
 }
 
@@ -64,6 +70,11 @@
 +(void)setNotificationIndicatorStyle:(UIBlurEffectStyle)style
 {
     [self sharedInstance].indicatorStyle = style;
+}
+
++(void)setAutoDismiss:(BOOL)autoDismiss
+{
+    [self sharedInstance].autoDismiss = autoDismiss;
 }
 
 +(void)showNotificationWithTitle:(NSString *)title message:(NSString *)message
@@ -230,8 +241,8 @@
 {
     [UIView animateWithDuration:kFTNotificationDefaultAnimationDuration
                           delay:0
-         usingSpringWithDamping:0.5
-          initialSpringVelocity:0.1
+         usingSpringWithDamping:0.6
+          initialSpringVelocity:0.8
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
                          
@@ -240,7 +251,7 @@
                      } completion:^(BOOL finished) {
                          if (finished) {
                              if (!self.isCurrentlyOnScreen) {
-                                 [self startDismissTimer];
+                                 if (self.autoDismiss)[self startDismissTimer];
                              }
                              self.isCurrentlyOnScreen = YES;
                          }
@@ -282,6 +293,7 @@
 @property (strong, nonatomic) UIImageView *iconImageView;
 @property (strong, nonatomic) UILabel *titleLabel;
 @property (strong, nonatomic) UILabel *messageLabel;
+@property (strong, nonatomic) UIView *handle;
 
 @end
 
@@ -332,6 +344,17 @@
     return _messageLabel;
 }
 
+- (UIView*) handle
+{
+    if (!_handle) {
+        _handle = [[UIView alloc] initWithFrame:CGRectMake(0, 0, kFTNotificationHandleWidth, kFTNotificationHandleHeight)];
+        _handle.layer.masksToBounds = YES;
+        _handle.layer.cornerRadius = 2.0f;
+        [self.contentView addSubview:_handle];
+    }
+    return _handle;
+}
+
 -(UIColor *)getTextColorWithStyle:(UIBlurEffectStyle)style
 {
     switch (style) {
@@ -358,7 +381,8 @@
     self.messageLabel.text = message;
     self.titleLabel.textColor = [self getTextColorWithStyle:style];
     self.messageLabel.textColor = [self getTextColorWithStyle:style];
-
+    self.handle.backgroundColor = [self getTextColorWithStyle:style];
+    [self.handle setAlpha:0.6f];
     
     CGSize messageSize = [self getFrameForNotificationMessageLabelWithImage:self.iconImageView.image message:message];
     
@@ -368,6 +392,8 @@
 
     self.titleLabel.frame = CGRectMake(text_X, kFTNotificationStatusBarHeight, kFTScreenWidth - kFTNotificationMargin_X - text_X,  kFTNotificationTitleHeight);
     self.messageLabel.frame = CGRectMake(text_X, kFTNotificationStatusBarHeight+kFTNotificationTitleHeight, kFTScreenWidth - kFTNotificationMargin_X - text_X, messageSize.height);
+    
+    self.handle.frame = CGRectMake(kFTScreenWidth/2.0f-(kFTNotificationHandleWidth/2.0f), self.frame.size.height-(kFTNotificationMargin_Y/2.0)-(kFTNotificationHandleHeight/2.0f), kFTNotificationHandleWidth, kFTNotificationHandleHeight);
 }
 
 #pragma mark - getFrameForNotificationMessageLabelWithImage
@@ -379,7 +405,9 @@
                                                         options:(NSStringDrawingUsesFontLeading | NSStringDrawingTruncatesLastVisibleLine | NSStringDrawingUsesLineFragmentOrigin)
                                                      attributes:@{NSFontAttributeName : kFTNotificationDefaultMessageFont}
                                                         context:nil];
-    CGSize size = CGSizeMake(textSize.size.width, MIN(textSize.size.height ,kFTNotificationMaxHeight - kFTNotificationTitleHeight - kFTNotificationStatusBarHeight - kFTNotificationMargin_Y));
+    CGFloat height = MIN(textSize.size.height ,kFTNotificationMaxHeight - kFTNotificationTitleHeight - kFTNotificationStatusBarHeight - kFTNotificationMargin_Y);
+
+    CGSize size = CGSizeMake(textSize.size.width, height);
     return size;
 }
 

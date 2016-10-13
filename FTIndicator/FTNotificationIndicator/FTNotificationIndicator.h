@@ -27,6 +27,12 @@ typedef void (^FTNotificationCompletion)(void);
  */
 +(void)setNotificationIndicatorStyle:(UIBlurEffectStyle)style;
 /**
+ *  setAutoDismiss
+ *
+ *  @param autoDismiss BOOL if notification is autodismissed or need tap
+ */
++(void)setAutoDismiss:(BOOL)autoDismiss;
+/**
  *  showNotificationWithTitle message
  *
  *  @param title   title
