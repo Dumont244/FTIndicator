@@ -87,7 +87,7 @@ typedef void (^FTNotificationCompletion)(void);
  *  dismiss
  */
 +(void)dismiss;
-
++(BOOL)isCurrentlyOnScreen;
 @end
 
 #pragma mark - FTNotificationIndicatorView

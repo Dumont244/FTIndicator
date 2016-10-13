@@ -77,6 +77,11 @@
     [self sharedInstance].autoDismiss = autoDismiss;
 }
 
++(BOOL)isCurrentlyOnScreen
+{
+    return [self sharedInstance].isCurrentlyOnScreen;
+}
+
 +(void)showNotificationWithTitle:(NSString *)title message:(NSString *)message
 {
     [self showNotificationWithImage:nil title:title message:message tapHandler:nil completion:nil];
